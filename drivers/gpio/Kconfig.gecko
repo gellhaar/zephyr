@@ -1,6 +1,7 @@
 # Gecko GPIO configuration options
 
 # Copyright (c) 2017 Christian Taedcke
+# Copyright (c) 2025 Jonny Gellhaar
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GPIO_GECKO
@@ -15,3 +16,13 @@ config GPIO_GECKO_COMMON_INIT_PRIORITY
 	int "Common initialization priority"
 	depends on GPIO_GECKO
 	default 39
+
+config GPIO_GECKO_ZERO_LATENCY_IRQ
+	bool "Cofigure GPIO as Zephyr zero latency IRQ"
+	default n
+	depends on GPIO_GECKO
+	select ZERO_LATENCY_IRQS
+	help
+	  Make sure to read documentatino of zero latency IRQ and its
+	  implications and potential dangers. Do not call kernel API
+	  from the GPIO inerrupt callback.
