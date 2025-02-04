@@ -5,7 +5,7 @@
  */
 
 #include "efr32bg2x.dtsi"
-#include <mem.h>
+#include <dt-bindings/dma/silabs/xg22-dma.h>
 
 &msc {
 	flash0: flash@0 {

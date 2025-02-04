@@ -5,6 +5,7 @@
  */
 
 #include "efr32bg2x.dtsi"
+#include <dt-bindings/dma/silabs/xg27-dma.h>
 #include <mem.h>
 
 &msc {
