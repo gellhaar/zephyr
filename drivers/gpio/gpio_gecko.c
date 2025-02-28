@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Christian Taedcke
+ * Copyright (c) 2025, Jonny Gellhaar
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -391,6 +392,12 @@ DEVICE_DT_DEFINE(DT_INST(0, silabs_gecko_gpio),
 		    PRE_KERNEL_1, CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY,
 		    &gpio_gecko_common_driver_api);
 
+#ifdef CONFIG_GPIO_GECKO_ZERO_LATENCY_IRQ
+#define CONFIGURED_FLAGS IRQ_ZERO_LATENCY
+#else
+#define CONFIGURED_FLAGS 0u
+#endif /* CONFIG_GPIO_GECKO_ZERO_LATENCY_IRQ */
+
 static int gpio_gecko_common_init(const struct device *dev)
 {
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
@@ -400,12 +407,12 @@ static int gpio_gecko_common_init(const struct device *dev)
 	IRQ_CONNECT(GPIO_EVEN_IRQn,
 		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_even, priority),
 		    gpio_gecko_common_isr,
-		    DEVICE_DT_GET(DT_INST(0, silabs_gecko_gpio)), 0);
+		    DEVICE_DT_GET(DT_INST(0, silabs_gecko_gpio)), CONFIGURED_FLAGS);
 
 	IRQ_CONNECT(GPIO_ODD_IRQn,
 		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_odd, priority),
 		    gpio_gecko_common_isr,
-		    DEVICE_DT_GET(DT_INST(0, silabs_gecko_gpio)), 0);
+		    DEVICE_DT_GET(DT_INST(0, silabs_gecko_gpio)), CONFIGURED_FLAGS);
 
 	irq_enable(GPIO_EVEN_IRQn);
 	irq_enable(GPIO_ODD_IRQn);
