@@ -246,7 +246,6 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMDRV_DIR}/dmadrv/src/dmadrv.c)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_I2C          ${EMLIB_DIR}/src/em_i2c.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LETIMER      ${EMLIB_DIR}/src/em_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LEUART       ${EMLIB_DIR}/src/em_leuart.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_MSC          ${EMLIB_DIR}/src/em_msc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMLIB_DIR}/src/em_ldma.c)
