@@ -11,6 +11,7 @@
 #include <dt-bindings/adc/adc.h>
 #include <dt-bindings/clock/silabs/xg24-clock.h>
 #include <dt-bindings/dma/silabs/xg24-dma.h>
+#include "gpio_gecko.h"
 #include <freq.h>
 
 / {
@@ -462,6 +463,13 @@
 				compatible = "silabs,bt-hci-efr32";
 				status = "disabled";
 			};
+		};
+
+		timer0: timer@50048000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x50048000 0x400>;
+			status = "disabled";
+			label = "TIMER_0";
 		};
 	};
 };
