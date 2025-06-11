@@ -8,6 +8,7 @@
 #include <silabs/efr32mg24b310f1536im48.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "xg24_dk2601b-pinctrl.dtsi"
 
 / {
@@ -28,6 +29,7 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		pwm-led0 = &red_pwm_led;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
@@ -43,6 +45,25 @@
 		};
 		blue_led: led_1 {
 			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: pwm_led_0 {
+			pwms = <&timer0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "red";
+		};
+
+		green_pwm_led: pwm_led_1 {
+			pwms = <&timer0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "green";
+		};
+
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&timer0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "blue";
 		};
 	};
 
@@ -69,6 +90,12 @@
 		enable-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
+};
+
+&timer0 {
+	pinctrl-0 = <&timer0_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &cpu0 {
