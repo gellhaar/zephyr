@@ -105,6 +105,10 @@ static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
 
 		compare_config.mode = timerCCModePWM;
 		TIMER_InitCC(cfg->timer, channel, &compare_config);
+#if defined(_TIMER_CC_CFG_MASK)
+		/* Timer is in disabled state after calling CC init. */
+		TIMER_Enable(cfg->timer, true);
+#endif
 	}
 
 	cfg->timer->CC[channel].CTRL |= (flags & PWM_POLARITY_INVERTED) ?
