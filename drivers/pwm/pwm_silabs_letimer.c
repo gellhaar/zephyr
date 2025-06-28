@@ -18,10 +18,6 @@
 
 LOG_MODULE_REGISTER(pwm_silabs_letimer, CONFIG_PWM_LOG_LEVEL);
 
-#define LETIMER_UFOA_MASK(channel)                                                                 \
-	((channel == 0) ? _LETIMER_CTRL_UFOA0_MASK : _LETIMER_CTRL_UFOA1_MASK)
-#define LETIMER_UFOA_PWM(channel) ((channel == 0) ? LETIMER_CTRL_UFOA0_PWM : LETIMER_CTRL_UFOA1_PWM)
-
 struct silabs_letimer_pwm_config {
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *clock_dev;
@@ -31,12 +27,20 @@ struct silabs_letimer_pwm_config {
 	bool run_in_debug;
 };
 
+static bool silabs_letimer_channel_is_pwm(const struct silabs_letimer_pwm_config *config,
+					  uint32_t channel)
+{
+	uint32_t mask = (channel == 0) ? _LETIMER_CTRL_UFOA0_MASK : _LETIMER_CTRL_UFOA1_MASK;
+
+	return FIELD_GET(mask, config->base->CTRL) == _LETIMER_CTRL_UFOA0_PWM;
+}
+
 static int silabs_letimer_pwm_set_cycles(const struct device *dev, uint32_t channel,
 					 uint32_t period_cycles, uint32_t pulse_cycles,
 					 pwm_flags_t flags)
 {
-	const struct silabs_letimer_pwm_config *config = dev->config;
 	bool invert_polarity = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
+	const struct silabs_letimer_pwm_config *config = dev->config;
 
 	if (period_cycles >= BIT(24) || pulse_cycles >= BIT(24)) {
 		return -ENOTSUP;
@@ -56,8 +60,9 @@ static int silabs_letimer_pwm_set_cycles(const struct device *dev, uint32_t chan
 		sys_clear_bit((mem_addr_t)&config->base->CTRL, channel + _LETIMER_CTRL_OPOL0_SHIFT);
 	}
 
-	if (FIELD_GET(LETIMER_UFOA_MASK(channel), config->base->CTRL) != _LETIMER_CTRL_UFOA0_PWM) {
-		config->base->CTRL_SET = LETIMER_UFOA_PWM(channel);
+	if (!silabs_letimer_channel_is_pwm(config, channel)) {
+		config->base->CTRL_SET =
+			(channel == 0) ? LETIMER_CTRL_UFOA0_PWM : LETIMER_CTRL_UFOA1_PWM;
 	}
 
 	sl_hal_letimer_set_compare(config->base, channel, pulse_cycles);
@@ -73,9 +78,9 @@ static int silabs_letimer_pwm_set_cycles(const struct device *dev, uint32_t chan
 static int silabs_letimer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 						 uint64_t *cycles)
 {
-	int err;
-	uint32_t clock_rate;
 	const struct silabs_letimer_pwm_config *config = dev->config;
+	uint32_t clock_rate;
+	int err;
 
 	err = clock_control_get_rate(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg,
 				     &clock_rate);
@@ -90,8 +95,8 @@ static int silabs_letimer_pwm_get_cycles_per_sec(const struct device *dev, uint3
 
 static int silabs_letimer_pwm_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	int err;
 	const struct silabs_letimer_pwm_config *config = dev->config;
+	int err;
 
 	if (action == PM_DEVICE_ACTION_RESUME) {
 		err = clock_control_on(config->clock_dev,
@@ -128,9 +133,9 @@ static int silabs_letimer_pwm_pm_action(const struct device *dev, enum pm_device
 
 static int silabs_letimer_pwm_init(const struct device *dev)
 {
-	int err;
-	const struct silabs_letimer_pwm_config *config = dev->config;
 	sl_hal_letimer_config_t letimer_config = SL_HAL_LETIMER_CONFIG_DEFAULT;
+	const struct silabs_letimer_pwm_config *config = dev->config;
+	int err;
 
 	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
 	if (err < 0 && err != -EALREADY) {
@@ -156,11 +161,11 @@ static DEVICE_API(pwm, silabs_letimer_pwm_api) = {
                                                                                                    \
 	static const struct silabs_letimer_pwm_config letimer_pwm_config_##inst = {                \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(inst),                                       \
-		.base = (LETIMER_TypeDef *)DT_INST_REG_ADDR(inst),                                 \
-		.run_in_debug = DT_INST_PROP(inst, run_in_debug),                                  \
-		.clock_div = DT_INST_ENUM_IDX(inst, clock_div),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),                  \
+		.clock_cfg = SILABS_DT_CLOCK_CFG(DT_INST_PARENT(inst)),                            \
+		.base = (LETIMER_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(inst)),                      \
+		.run_in_debug = DT_PROP(DT_INST_PARENT(inst), run_in_debug),                       \
+		.clock_div = DT_ENUM_IDX(DT_INST_PARENT(inst), clock_div),                         \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &silabs_letimer_pwm_init, PM_DEVICE_DT_INST_GET(inst), NULL,   \
 			      &letimer_pwm_config_##inst, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,   \
