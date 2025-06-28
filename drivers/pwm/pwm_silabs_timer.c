@@ -41,8 +41,8 @@ static int silabs_timer_pwm_set_cycles(const struct device *dev, uint32_t channe
 				       uint32_t period_cycles, uint32_t pulse_cycles,
 				       pwm_flags_t flags)
 {
-	const struct silabs_timer_pwm_config *config = dev->config;
 	bool invert_polarity = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
+	const struct silabs_timer_pwm_config *config = dev->config;
 
 	if (channel > config->num_channels) {
 		return -EINVAL;
@@ -97,9 +97,9 @@ static int silabs_timer_pwm_set_cycles(const struct device *dev, uint32_t channe
 static int silabs_timer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 					       uint64_t *cycles)
 {
-	int err;
-	uint32_t clock_rate;
 	const struct silabs_timer_pwm_config *config = dev->config;
+	uint32_t clock_rate;
+	int err;
 
 	if (channel > config->num_channels) {
 		return -EINVAL;
@@ -121,10 +121,10 @@ static int silabs_timer_pwm_configure_capture(const struct device *dev, uint32_t
 					      pwm_flags_t flags, pwm_capture_callback_handler_t cb,
 					      void *user_data)
 {
-	const struct silabs_timer_pwm_config *config = dev->config;
-	struct silabs_timer_pwm_data *data = dev->data;
 	sl_hal_timer_channel_config_t ch_config = SL_HAL_TIMER_CHANNEL_CONFIG_DEFAULT;
 	bool invert_polarity = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
+	const struct silabs_timer_pwm_config *config = dev->config;
+	struct silabs_timer_pwm_data *data = dev->data;
 
 	if (channel != 0) {
 		LOG_ERR("Only channel 0 is supported for capture");
@@ -226,8 +226,8 @@ static void silabs_timer_pwm_isr(const struct device *dev)
 {
 	const struct silabs_timer_pwm_config *config = dev->config;
 	struct silabs_timer_pwm_data *data = dev->data;
-	uint32_t pulse_cycles = 0;
 	uint32_t period_cycles = 0;
+	uint32_t pulse_cycles = 0;
 
 	if (!(sl_hal_timer_get_enabled_pending_interrupts(config->base) & TIMER_IF_CC0)) {
 		return;
@@ -270,8 +270,8 @@ static void silabs_timer_pwm_isr(const struct device *dev)
 
 static int silabs_timer_pwm_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	int err;
 	const struct silabs_timer_pwm_config *config = dev->config;
+	int err;
 
 	if (action == PM_DEVICE_ACTION_RESUME) {
 		err = clock_control_on(config->clock_dev,
@@ -316,9 +316,9 @@ static int silabs_timer_pwm_pm_action(const struct device *dev, enum pm_device_a
 
 static int silabs_timer_pwm_init(const struct device *dev)
 {
-	int err;
-	const struct silabs_timer_pwm_config *config = dev->config;
 	sl_hal_timer_config_t timer_config = SL_HAL_TIMER_CONFIG_DEFAULT;
+	const struct silabs_timer_pwm_config *config = dev->config;
+	int err;
 
 	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
 	if (err < 0 && err != -EALREADY) {
@@ -351,9 +351,10 @@ static DEVICE_API(pwm, silabs_timer_pwm_api) = {
 #define TIMER_IRQ_CONFIG_HANDLER(inst)                                                             \
 	static void silabs_timer_pwm_irq_config_##inst(const struct device *dev)                   \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ(inst, irq), DT_INST_IRQ(inst, priority),                   \
-			    silabs_timer_pwm_isr, DEVICE_DT_INST_GET(inst), 0);                    \
-		irq_enable(DT_INST_IRQ(inst, irq));                                                \
+		IRQ_CONNECT(DT_IRQ(DT_INST_PARENT(inst), irq),                                     \
+			    DT_IRQ(DT_INST_PARENT(inst), priority), silabs_timer_pwm_isr,          \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_IRQ(DT_INST_PARENT(inst), irq));                                     \
 	}
 #else
 #define TIMER_IRQ_CONFIG_FUNC(inst) NULL
@@ -367,14 +368,14 @@ static DEVICE_API(pwm, silabs_timer_pwm_api) = {
                                                                                                    \
 	static const struct silabs_timer_pwm_config timer_pwm_config_##inst = {                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(inst),                                       \
-		.base = (TIMER_TypeDef *)DT_INST_REG_ADDR(inst),                                   \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),                  \
+		.clock_cfg = SILABS_DT_CLOCK_CFG(DT_INST_PARENT(inst)),                            \
+		.base = (TIMER_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(inst)),                        \
 		.irq_config_func = TIMER_IRQ_CONFIG_FUNC(inst),                                    \
-		.clock_div = DT_INST_PROP(inst, clock_div),                                        \
-		.num_channels = DT_INST_PROP(inst, channels),                                      \
-		.counter_size = DT_INST_PROP(inst, counter_size),                                  \
-		.run_in_debug = DT_INST_PROP(inst, run_in_debug),                                  \
+		.clock_div = DT_PROP(DT_INST_PARENT(inst), clock_div),                             \
+		.num_channels = DT_PROP(DT_INST_PARENT(inst), channels),                           \
+		.counter_size = DT_PROP(DT_INST_PARENT(inst), counter_size),                       \
+		.run_in_debug = DT_PROP(DT_INST_PARENT(inst), run_in_debug),                       \
 	};                                                                                         \
 	static struct silabs_timer_pwm_data timer_pwm_data_##inst;                                 \
 	DEVICE_DT_INST_DEFINE(inst, &silabs_timer_pwm_init, PM_DEVICE_DT_INST_GET(inst),           \
