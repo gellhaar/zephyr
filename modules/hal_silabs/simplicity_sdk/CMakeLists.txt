@@ -144,6 +144,7 @@ zephyr_compile_definitions(
 zephyr_library_sources(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_DEVICE_FAMILY}/Source/system_${CONFIG_SOC_SERIES}.c
   ${EMLIB_DIR}/src/em_system.c
+  ${PERIPHERAL_DIR}/src/sl_hal_system.c
   ${SERVICE_DIR}/clock_manager/src/sl_clock_manager.c
   ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_hal_s2.c
   ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init.c
