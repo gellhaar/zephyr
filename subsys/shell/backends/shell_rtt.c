@@ -185,6 +185,14 @@ const struct shell_transport_api shell_rtt_transport_api = {
 
 static int enable_shell_rtt(void)
 {
+#if defined(CONFIG_SHELL_BACKEND_ENABLE_HOOK)
+	extern bool shell_backend_enable_hook(const struct shell *sh);
+
+	if (!shell_backend_enable_hook(&shell_rtt)) {
+		return 0;
+	}
+#endif /* CONFIG_SHELL_BACKEND_ENABLE_HOOK */
+
 	bool log_backend = CONFIG_SHELL_RTT_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_RTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_RTT_INIT_LOG_LEVEL;

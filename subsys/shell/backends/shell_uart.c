@@ -534,6 +534,14 @@ struct smp_shell_data *shell_uart_smp_shell_data_get_ptr(void)
 static int enable_shell_uart(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
+#if defined(CONFIG_SHELL_BACKEND_ENABLE_HOOK)
+	extern bool shell_backend_enable_hook(const struct shell *sh);
+
+	if (!shell_backend_enable_hook(&shell_uart)) {
+		return 0;
+	}
+#endif /* CONFIG_SHELL_BACKEND_ENABLE_HOOK */
+
 	bool log_backend = CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > 0;
 	uint32_t level =
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
