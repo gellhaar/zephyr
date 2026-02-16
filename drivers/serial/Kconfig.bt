@@ -1,4 +1,5 @@
 # Copyright (c) 2024 Croxel, Inc.
+# Copyright (c) 2026 Jonny Gellhaar
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_BT
@@ -13,6 +14,15 @@ config UART_BT
 	  serial data over Bluetooth LE GATT using NUS (Nordic UART Service).
 
 if UART_BT
+
+config UART_BT_EXTERNAL_NUS_INST
+	bool "Use an externally provided NUS instance"
+	help
+	  When enabled, the UART BT driver does not create its own NUS GATT
+	  service. Instead, it discovers a bt_nus_inst provided by the
+	  application or another module. This allows the application to
+	  control the NUS GATT service lifecycle dynamically, for example
+	  to exclude it in production firmware.
 
 config UART_BT_WORKQUEUE_PRIORITY
 	int "UART NUS Work-queue Priority"
