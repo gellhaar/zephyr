@@ -8,7 +8,7 @@
 
 / {
 	aliases {
-		pwm-0 = &letimer0;
+		pwm-0 = &letimer0_pwm;
 	};
 };
 
@@ -22,7 +22,11 @@
 };
 
 &letimer0 {
-	pinctrl-0 = <&letimer0_default>;
-	pinctrl-names = "default";
 	status = "okay";
+
+	letimer0_pwm: pwm {
+		pinctrl-0 = <&letimer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };
