@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Croxel, Inc.
+ * Copyright (c) 2026 Jonny Gellhaar
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,8 @@
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/bluetooth/services/nus.h>
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util_macro.h>
 
 #define DT_DRV_COMPAT zephyr_nus_uart
 
@@ -328,6 +331,17 @@ static int uart_bt_init(const struct device *dev)
 	 */
 	dev_data->uart.callback.dev = dev;
 
+#if defined(CONFIG_UART_BT_EXTERNAL_NUS_INST)
+	STRUCT_SECTION_FOREACH(bt_nus_inst, instance) {
+		dev_data->bt.inst = instance;
+		break;
+	}
+	if (dev_data->bt.inst == NULL) {
+		LOG_ERR("No external NUS instance found");
+		return -ENODEV;
+	}
+#endif
+
 	k_work_init_delayable(&dev_data->uart.tx_work, tx_work_handler);
 	k_work_init(&dev_data->uart.cb_work, cb_work_handler);
 
@@ -344,14 +358,18 @@ static int uart_bt_init(const struct device *dev)
 
 #define UART_BT_INIT(n)										   \
 												   \
-	BT_NUS_INST_DEFINE(bt_nus_inst_##n);							   \
+	IF_DISABLED(CONFIG_UART_BT_EXTERNAL_NUS_INST, (						   \
+		BT_NUS_INST_DEFINE(bt_nus_inst_##n);						   \
+	))											   \
 												   \
 	RING_BUF_DECLARE(bt_nus_rx_rb_##n, UART_BT_RX_FIFO_SIZE(n));				   \
 	RING_BUF_DECLARE(bt_nus_tx_rb_##n, UART_BT_TX_FIFO_SIZE(n));				   \
 												   \
 	static struct uart_bt_data uart_bt_data_##n = {						   \
 		.bt = {										   \
-			.inst = &bt_nus_inst_##n,						   \
+			IF_DISABLED(CONFIG_UART_BT_EXTERNAL_NUS_INST, (				   \
+				.inst = &bt_nus_inst_##n,					   \
+			))									   \
 			.enabled = ATOMIC_INIT(0),						   \
 			.cb = {									   \
 				.notif_enabled = bt_notif_enabled,				   \
