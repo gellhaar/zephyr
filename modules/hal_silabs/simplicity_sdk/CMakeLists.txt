@@ -266,6 +266,8 @@ zephyr_include_directories_ifdef(CONFIG_SOC_GECKO_SE
 
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_SE
   ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager.c
+  ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_key_handling.c
+  ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_signature.c
   ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_util.c
   ${SECURITY_DIR}/sl_component/se_manager/src/sli_se_manager_mailbox.c
 )
