@@ -6,6 +6,8 @@ config UART_BT
 	bool "UART over NUS Bluetooth LE"
 	depends on BT_ZEPHYR_NUS
 	depends on DT_HAS_ZEPHYR_NUS_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
 	select RING_BUFFER
 	select EXPERIMENTAL
