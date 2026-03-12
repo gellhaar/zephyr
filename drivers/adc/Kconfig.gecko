@@ -8,6 +8,7 @@ config ADC_GECKO_IADC
 	default y
 	depends on DT_HAS_SILABS_GECKO_IADC_ENABLED
 	select CLOCK_CONTROL
+	select PINCTRL
 	select SOC_GECKO_IADC
 	select ADC_CONFIGURABLE_INPUTS
 	help
