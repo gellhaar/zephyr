@@ -5,6 +5,12 @@ rsource "*/Kconfig.defconfig"
 
 if SOC_FAMILY_SILABS_S2
 
+# Enable clock control when the SoC has the CMU (silabs,series-clock). Required
+# by IADC, USART and other peripherals; default here to avoid dependency loops
+# from drivers (e.g. ADC_GECKO_IADC) selecting CLOCK_CONTROL.
+config CLOCK_CONTROL
+	default y if DT_HAS_SILABS_SERIES_CLOCK_ENABLED
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default 32768
