@@ -43,6 +43,29 @@ static int silabs_timer_pwm_set_cycles(const struct device *dev, uint32_t channe
 {
 	bool invert_polarity = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
 	const struct silabs_timer_pwm_config *config = dev->config;
+	int err;
+
+	/*
+	 * The module may be disabled if the device was suspended by the
+	 * system power management after the last output was turned off.
+	 * Re-enable it before touching any other registers, as writing to
+	 * registers of a disabled module causes a bus fault on Series 2
+	 * devices.
+	 */
+	if ((config->base->EN & _TIMER_EN_EN_MASK) == 0U) {
+		/*
+		 * The module was disabled by the system power management.
+		 * Restore the bus clock before enabling the module, as
+		 * register writes to a module with a gated bus clock cause
+		 * a bus fault on Series 2 devices.
+		 */
+		err = clock_control_on(config->clock_dev,
+				       (clock_control_subsys_t)&config->clock_cfg);
+		if ((err < 0) && (err != -EALREADY)) {
+			return err;
+		}
+		sl_hal_timer_enable(config->base);
+	}
 
 	if (channel > config->num_channels) {
 		return -EINVAL;
@@ -294,8 +317,17 @@ static int silabs_timer_pwm_pm_action(const struct device *dev, enum pm_device_a
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
-		sl_hal_timer_stop(config->base);
-		sl_hal_timer_disable(config->base);
+		/*
+		 * Only stop and disable the module if it is enabled. Writing
+		 * to registers of a module that is disabled (EN = 0) causes a
+		 * precise bus fault on Series 2 devices. A module that was
+		 * never started (no PWM output configured) is already in the
+		 * state the suspend action would leave it in.
+		 */
+		if ((config->base->EN & _TIMER_EN_EN_MASK) != 0U) {
+			sl_hal_timer_stop(config->base);
+			sl_hal_timer_disable(config->base);
+		}
 
 		err = clock_control_off(config->clock_dev,
 					(clock_control_subsys_t)&config->clock_cfg);
