@@ -42,6 +42,17 @@ static int silabs_letimer_pwm_set_cycles(const struct device *dev, uint32_t chan
 	bool invert_polarity = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
 	const struct silabs_letimer_pwm_config *config = dev->config;
 
+	/*
+	 * The module may be disabled if the device was suspended by the
+	 * system power management after the last output was turned off.
+	 * Re-enable it before touching any other registers, as writing to
+	 * registers of a disabled module causes a bus fault on Series 2
+	 * devices.
+	 */
+	if ((config->base->EN & _LETIMER_EN_EN_MASK) == 0U) {
+		sl_hal_letimer_enable(config->base);
+	}
+
 	if (period_cycles >= BIT(24) || pulse_cycles >= BIT(24)) {
 		return -ENOTSUP;
 	}
@@ -112,18 +123,18 @@ static int silabs_letimer_pwm_pm_action(const struct device *dev, enum pm_device
 
 		sl_hal_letimer_enable(config->base);
 	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
-		sl_hal_letimer_disable(config->base);
-
-		err = clock_control_off(config->clock_dev,
-					(clock_control_subsys_t)&config->clock_cfg);
-		if (err < 0) {
-			return err;
-		}
-
-		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-		if (err < 0 && err != -ENOENT) {
-			return err;
-		}
+		/*
+		 * The LETIMER is an EM2-native peripheral with a negligible
+		 * power draw, and it must keep running across low-power
+		 * states to maintain the PWM function. Suspending it would
+		 * gate its bus clock and disable the module, which causes
+		 * bus faults on subsequent register access (both from the
+		 * resume action in the wake path and from set_cycles calls
+		 * that follow a suspension). Report the action as
+		 * unsupported so that the power management core leaves the
+		 * device permanently active.
+		 */
+		return -ENOTSUP;
 	} else {
 		return -ENOTSUP;
 	}
